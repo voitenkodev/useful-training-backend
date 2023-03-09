@@ -1,9 +1,9 @@
-package dev.voitenko.authentification
+package dev.voitenko.services.authentification
 
-import dev.voitenko.authentification.dto.LoginBody
-import dev.voitenko.authentification.dto.LoginResponse
-import dev.voitenko.authentification.dto.RegisterBody
-import dev.voitenko.authentification.dto.RegisterResponse
+import dev.voitenko.services.authentification.dto.LoginBody
+import dev.voitenko.services.authentification.dto.LoginResponse
+import dev.voitenko.services.authentification.dto.RegisterBody
+import dev.voitenko.services.authentification.dto.RegisterResponse
 import dev.voitenko.database.TokenDTO
 import dev.voitenko.database.Tokens
 import dev.voitenko.database.UserDTO

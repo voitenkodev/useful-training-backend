@@ -1,10 +1,9 @@
 package dev.voitenko
 
-import dev.voitenko.authentification.configureLoginRouting
-import dev.voitenko.authentification.configureRegisterRouting
-import dev.voitenko.authentification.configureUserRouting
 import dev.voitenko.database.*
 import dev.voitenko.plugins.configureSerialization
+import dev.voitenko.services.authentification.authRouting
+import dev.voitenko.services.trainings.trainingsRouting
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
@@ -35,7 +34,6 @@ fun main() {
 
 fun Application.module() {
     configureSerialization()
-    configureRegisterRouting()
-    configureLoginRouting()
-    configureUserRouting()
+    authRouting()
+    trainingsRouting()
 }

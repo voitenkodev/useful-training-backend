@@ -1,4 +1,4 @@
-package dev.voitenko.authentification.dto
+package dev.voitenko.services.authentification.dto
 
 import kotlinx.serialization.Serializable
 

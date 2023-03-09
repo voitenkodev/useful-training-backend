@@ -1,4 +1,4 @@
-package dev.voitenko.dto
+package dev.voitenko.services.trainings.dto
 
 import kotlinx.serialization.Serializable
 
