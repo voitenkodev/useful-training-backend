@@ -1,7 +1,9 @@
 package dev.voitenko.database
 
 import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
@@ -11,7 +13,7 @@ data class TrainingsDto(
     val duration: String,
     val date: String,
     val tonnage: Double,
-    val countOfLifting: Int,
+    val count_of_lifting: Int,
     val intensity: Double,
 )
 
@@ -37,4 +39,20 @@ object Trainings : UUIDTable(name = "trainings") {
             }
         }
     }
+
+    fun getAll(user_id: UUID): List<TrainingsDto> = transaction {
+        Iterations
+            .select { Trainings.user_id eq user_id }
+            .map { it.toDto() }
+    }
+
+    private fun ResultRow.toDto(): TrainingsDto = TrainingsDto(
+        id = this[Trainings.id].value,
+        user_id = this[user_id],
+        duration = this[duration],
+        date = this[date],
+        tonnage = this[tonnage],
+        intensity = this[intensity],
+        count_of_lifting = this[count_of_lifting],
+    )
 }

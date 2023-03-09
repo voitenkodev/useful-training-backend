@@ -1,37 +1,46 @@
 package dev.voitenko.database
 
 import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
-data class ExercisesDto(
+data class IterationsDto(
     val id: UUID,
-    val training_id: UUID,
-    val name: String,
-    val tonnage: Double,
-    val countOfLifting: Int,
-    val intensity: Double,
+    val exercise_id: UUID,
+    val weight: Double,
+    val repeat: Int,
 )
 
-object Exercises : UUIDTable(name = "exercises") {
+object Iterations : UUIDTable(name = "iterations") {
 
-    private val training_id = uuid("training_id").references(Trainings.id)
-    private val name = varchar("name", 50)
-    private val tonnage = double("tonnage")
-    private val intensity = double("intensity")
-    private val count_of_lifting = integer("count_of_lifting")
+    private val exercise_id = uuid("exercise_id").references(Exercises.id)
+    private val weight = double("weight")
+    private val repeat = integer("repeat")
 
-    fun insert(dto: ExercisesDto) {
+    fun insert(dto: IterationsDto) {
         transaction {
             insert {
                 it[id] = dto.id
-                it[training_id] = dto.training_id
-                it[name] = dto.name
-                it[tonnage] = dto.tonnage
-                it[intensity] = intensity
-                it[count_of_lifting] = count_of_lifting
+                it[exercise_id] = dto.exercise_id
+                it[weight] = dto.weight
+                it[repeat] = dto.repeat
             }
         }
     }
+
+    fun getAll(exercise_id: UUID): List<IterationsDto> = transaction {
+        Iterations
+            .select { Iterations.exercise_id eq exercise_id }
+            .map { it.toDto() }
+    }
+
+    private fun ResultRow.toDto(): IterationsDto = IterationsDto(
+        id = this[Iterations.id].value,
+        exercise_id = this[exercise_id],
+        weight = this[weight],
+        repeat = this[repeat],
+    )
 }

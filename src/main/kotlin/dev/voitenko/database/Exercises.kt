@@ -1,31 +1,54 @@
 package dev.voitenko.database
 
 import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
-data class IterationsDto(
+data class ExercisesDto(
     val id: UUID,
-    val exercise_id: UUID,
-    val weight: Double,
-    val repeat: Int,
+    val training_id: UUID,
+    val name: String,
+    val tonnage: Double,
+    val count_of_lifting: Int,
+    val intensity: Double,
 )
 
-object Iterations : UUIDTable(name = "iterations") {
+object Exercises : UUIDTable(name = "exercises") {
 
-    private val exercise_id = uuid("exercise_id").references(Exercises.id)
-    private val weight = double("weight")
-    private val repeat = integer("repeat")
+    private val training_id = uuid("training_id").references(Trainings.id)
+    private val name = varchar("name", 50)
+    private val tonnage = double("tonnage")
+    private val intensity = double("intensity")
+    private val count_of_lifting = integer("count_of_lifting")
 
-    fun insert(dto: IterationsDto) {
+    fun insert(dto: ExercisesDto) {
         transaction {
             insert {
                 it[id] = dto.id
-                it[exercise_id] = dto.exercise_id
-                it[weight] = dto.weight
-                it[repeat] = dto.repeat
+                it[training_id] = dto.training_id
+                it[name] = dto.name
+                it[tonnage] = dto.tonnage
+                it[intensity] = intensity
+                it[count_of_lifting] = count_of_lifting
             }
         }
     }
+
+    fun getAll(training_id: UUID): List<ExercisesDto> = transaction {
+        Exercises
+            .select { Exercises.training_id eq training_id }
+            .map { it.toDto() }
+    }
+
+    private fun ResultRow.toDto(): ExercisesDto = ExercisesDto(
+        id = this[Exercises.id].value,
+        training_id = this[training_id],
+        name = this[name],
+        tonnage = this[tonnage],
+        intensity = this[intensity],
+        count_of_lifting = this[count_of_lifting],
+    )
 }
