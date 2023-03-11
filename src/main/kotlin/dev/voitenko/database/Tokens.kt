@@ -25,5 +25,4 @@ object Tokens : UUIDTable(name = "tokens") {
             }
         }
     }
-
 }

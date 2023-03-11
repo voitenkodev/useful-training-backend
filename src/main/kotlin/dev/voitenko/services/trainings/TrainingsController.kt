@@ -1,50 +1,38 @@
 package dev.voitenko.services.trainings
 
-import dev.voitenko.services.authentification.dto.LoginBody
-import dev.voitenko.services.authentification.dto.LoginResponse
-import dev.voitenko.services.authentification.dto.RegisterBody
-import dev.voitenko.services.authentification.dto.RegisterResponse
-import dev.voitenko.database.TokenDTO
-import dev.voitenko.database.Tokens
-import dev.voitenko.database.UserDTO
-import dev.voitenko.database.Users
+import dev.voitenko.database.*
+import dev.voitenko.services.trainings.dto.Training
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import org.jetbrains.exposed.sql.ResultRow
 import java.util.*
 
-class TrainingsController(
-    private val call: ApplicationCall
-) {
+class TrainingsController(private val call: ApplicationCall) {
 
     suspend fun getTraining() {
-        val body = call.receive<RegisterBody>()
-        val isUserExist = Users.get(body.email) != null
 
-        if (isUserExist) {
-            call.respond(HttpStatusCode.Conflict, "User Already Exist")
-        } else {
-            val token = UUID.randomUUID()
-            val id = UUID.randomUUID()
-            Users.insert(UserDTO(id = id, email = body.email, password = body.password))
-            Tokens.insert(TokenDTO(id = id, email = body.email, token = token.toString()))
-            call.respond(RegisterResponse(token = token.toString()))
+        val id = UUID.fromString(call.parameters["id"])
+
+        val training= Trainings.get(id).firstOrNull()
+
+        if (training == null) {
+            call.respond(HttpStatusCode.BadRequest, "Training Not Found")
+            return
         }
+
+        println(training)
+
+        call.respond(HttpStatusCode.OK, training)
     }
 
     suspend fun setTraining() {
-        val body = call.receive<LoginBody>()
-        val user = Users.get(body.email)
-        if (user == null) {
-            call.respond(HttpStatusCode.Conflict, "User Not Found")
-        } else if (body.password != user.password) {
-            call.respond(HttpStatusCode.Conflict, "Incorrect Password")
-        } else {
-            val token = UUID.randomUUID()
-            val id = UUID.randomUUID()
-            Tokens.insert(TokenDTO(id = id, email = body.email, token = token.toString()))
-            call.respond(LoginResponse(token = token.toString()))
-        }
+
+        val body = call.receive<Training>()
+
+        Trainings.insert(body)
+
+        call.respond(HttpStatusCode.OK)
     }
 }
