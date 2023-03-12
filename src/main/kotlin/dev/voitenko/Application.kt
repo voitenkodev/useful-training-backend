@@ -21,7 +21,7 @@ fun main() {
 
     transaction {
         SchemaUtils
-            .create(Users, Tokens, Trainings, Exercises, Iterations)
+            .create(Users, TokenTable, Trainings, Exercises, Iterations)
     }
 
     embeddedServer(

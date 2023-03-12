@@ -5,7 +5,7 @@ import dev.voitenko.services.authentification.dto.LoginResponse
 import dev.voitenko.services.authentification.dto.RegisterBody
 import dev.voitenko.services.authentification.dto.RegisterResponse
 import dev.voitenko.database.TokenDTO
-import dev.voitenko.database.Tokens
+import dev.voitenko.database.TokenTable
 import dev.voitenko.database.UserDTO
 import dev.voitenko.database.Users
 import io.ktor.http.*
@@ -28,7 +28,7 @@ class AuthController(
             val token = UUID.randomUUID()
             val id = UUID.randomUUID()
             Users.insert(UserDTO(id = id, email = body.email, password = body.password))
-            Tokens.insert(TokenDTO(id = id, email = body.email, token = token.toString()))
+            TokenTable.insert(TokenDTO(id = id, email = body.email, token = token.toString()))
             call.respond(RegisterResponse(token = token.toString()))
         }
     }
@@ -43,7 +43,7 @@ class AuthController(
         } else {
             val token = UUID.randomUUID()
             val id = UUID.randomUUID()
-            Tokens.insert(TokenDTO(id = id, email = body.email, token = token.toString()))
+            TokenTable.insert(TokenDTO(id = id, email = body.email, token = token.toString()))
             call.respond(LoginResponse(token = token.toString()))
         }
     }

@@ -94,49 +94,45 @@ fun Trainings.insert(training: Training) = transaction {
 }
 
 fun Trainings.get(id: UUID): List<Training> = transaction {
+    this@get
+        .leftJoin(Exercises)
+        .leftJoin(Iterations)
+        .select {
+            this@get.id eq id
+        }.groupBy(
+            { p -> p.toTraining() }, { p -> p }
+        ).map {
+            val training = it.key
+            val exercises = it.value.groupBy({ p -> p.toExercise() }, { p -> p.toIteration() })
 
-    this@get.innerJoin(Exercises)
-        .innerJoin(Iterations)
-        .select { this@get.id eq id }
-        .groupBy(Trainings.id, Exercises.id, Iterations.id)
-        .map {
-            val training = it.toTraining()
-            val exercise = it.toExercise()
-            val iteration = it.toIteration()
-            training to (exercise to iteration)
-        }.groupBy {
-            it.first
+            training to exercises
         }.map {
-            Training(
-                id = it.key.id.toString(),
-                duration = it.key.duration,
-                date = it.key.date,
-                tonnage = it.key.tonnage,
-                countOfLifting = it.key.count_of_lifting,
-                intensity = it.key.intensity,
-                exercises = it
-                    .value
-                    .map { it.second }
-                    .groupBy { it.first }
-                    .map { ex ->
-                        Training.Exercise(
-                            id = ex.key.id.toString(),
-                            name = ex.key.name,
-                            iterations = ex
-                                .value
-                                .map { it.second }
-                                .map { iter ->
-                                    Training.Exercise.Iteration(
-                                        id = iter.id.toString(),
-                                        weight = iter.weight,
-                                        repeat = iter.repeat
-                                    )
-                                },
-                            tonnage = ex.key.tonnage,
-                            countOfLifting = ex.key.count_of_lifting,
-                            intensity = ex.key.intensity
+
+            val exercises: List<Training.Exercise> = it.second.map { ex ->
+                Training.Exercise(
+                    id = ex.key.id.toString(),
+                    name = ex.key.name,
+                    iterations = ex.value.map { iteration ->
+                        Training.Exercise.Iteration(
+                            id = iteration.id.toString(),
+                            weight = iteration.weight,
+                            repeat = iteration.repeat
                         )
-                    }
+                    },
+                    tonnage = ex.key.tonnage,
+                    countOfLifting = ex.key.count_of_lifting,
+                    intensity = ex.key.intensity
+                )
+            }
+
+            Training(
+                id = it.first.id.toString(),
+                duration = it.first.duration,
+                date = it.first.date,
+                tonnage = it.first.tonnage,
+                countOfLifting = it.first.count_of_lifting,
+                intensity = it.first.intensity,
+                exercises = exercises
             )
         }
 }
