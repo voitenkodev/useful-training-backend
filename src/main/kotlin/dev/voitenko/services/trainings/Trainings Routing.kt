@@ -11,6 +11,12 @@ fun Application.trainingsRouting() {
         }
     }
     routing {
+        get("/trainings") {
+            val trainingsController = TrainingsController(call)
+            trainingsController.getTrainings()
+        }
+    }
+    routing {
         post("/training") {
             val trainingsController = TrainingsController(call)
             trainingsController.setTraining()

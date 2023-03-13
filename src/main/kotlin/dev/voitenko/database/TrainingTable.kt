@@ -8,7 +8,7 @@ import java.util.*
 
 data class TrainingsDto(
     val id: UUID,
-//    val user_id: UUID,
+    val user_id: UUID,
     val duration: String,
     val date: String,
     val tonnage: Double,
@@ -33,7 +33,7 @@ data class IterationsDto(
 )
 
 object Trainings : UUIDTable(name = "trainings") {
-    //    val user_id = uuid("user_id").references(Users.id)
+    val user_id = uuid("user_id").references(Users.id)
     val duration = varchar("duration", 50)
     val date = varchar("date", 50)
     val tonnage = double("tonnage")
@@ -55,12 +55,15 @@ object Iterations : UUIDTable(name = "iterations") {
     val repeat = integer("repeat")
 }
 
-fun Trainings.insert(training: Training) = transaction {
+fun Trainings.insert(
+    userId: UUID,
+    training: Training
+) = transaction {
 
     val trainingId = training.id?.let { UUID.fromString(it) } ?: UUID.randomUUID()
 
     insertAndGetId {
-//        it[user_id] = dto.user_id
+        it[user_id] = userId
         it[id] = trainingId
         it[duration] = training.duration
         it[date] = training.date
@@ -93,38 +96,36 @@ fun Trainings.insert(training: Training) = transaction {
     }
 }
 
-fun Trainings.get(id: UUID): List<Training> = transaction {
+fun Trainings.get(
+    select: Join.() -> Query
+): List<Training> = transaction {
     this@get
         .leftJoin(Exercises)
         .leftJoin(Iterations)
-        .select {
-            this@get.id eq id
-        }.groupBy(
+        .select()
+        .groupBy(
             { p -> p.toTraining() }, { p -> p }
         ).map {
             val training = it.key
             val exercises = it.value.groupBy({ p -> p.toExercise() }, { p -> p.toIteration() })
-
             training to exercises
         }.map {
-
             val exercises: List<Training.Exercise> = it.second.map { ex ->
                 Training.Exercise(
                     id = ex.key.id.toString(),
                     name = ex.key.name,
+                    tonnage = ex.key.tonnage,
+                    countOfLifting = ex.key.count_of_lifting,
+                    intensity = ex.key.intensity,
                     iterations = ex.value.map { iteration ->
                         Training.Exercise.Iteration(
                             id = iteration.id.toString(),
                             weight = iteration.weight,
                             repeat = iteration.repeat
                         )
-                    },
-                    tonnage = ex.key.tonnage,
-                    countOfLifting = ex.key.count_of_lifting,
-                    intensity = ex.key.intensity
+                    }
                 )
             }
-
             Training(
                 id = it.first.id.toString(),
                 duration = it.first.duration,
@@ -139,7 +140,7 @@ fun Trainings.get(id: UUID): List<Training> = transaction {
 
 private fun ResultRow.toTraining(): TrainingsDto = TrainingsDto(
     id = this[Trainings.id].value,
-//    user_id = this[Trainings.user_id],
+    user_id = this[Trainings.user_id],
     duration = this[Trainings.duration],
     date = this[Trainings.date],
     tonnage = this[Trainings.tonnage],
@@ -162,24 +163,3 @@ private fun ResultRow.toIteration(): IterationsDto = IterationsDto(
     weight = this[Iterations.weight],
     repeat = this[Iterations.repeat],
 )
-
-//fun insert(dto: TrainingsDto) {
-//    transaction {
-//        insert {
-//            it[id] = dto.id
-//            it[user_id] = dto.user_id
-//            it[duration] = dto.duration
-//            it[date] = dto.date
-//            it[tonnage] = dto.tonnage
-//            it[intensity] = intensity
-//            it[count_of_lifting] = count_of_lifting
-//        }
-//    }
-//}
-//
-//fun getAll(user_id: UUID): List<TrainingsDto> = transaction {
-//    Iterations
-//        .select { Trainings.user_id eq user_id }
-//        .map { it.toDto() }
-//}
-//

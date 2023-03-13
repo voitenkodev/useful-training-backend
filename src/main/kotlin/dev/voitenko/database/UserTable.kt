@@ -7,7 +7,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 class UserDTO(
-    val id: UUID,
+    val token: UUID,
     val email: String,
     val password: String
 )
@@ -20,18 +20,29 @@ object Users : UUIDTable(name = "users") {
     fun insert(dto: UserDTO) {
         transaction {
             Users.insert {
-                it[id] = dto.id
+                it[id] = dto.token
                 it[email] = dto.email
                 it[password] = dto.password
             }
         }
     }
 
-    fun get(email: String): UserDTO? {
+    fun getByToken(token: UUID): UserDTO? {
+        return transaction {
+            val user = Users.select { Users.id.eq(token) }.firstOrNull()
+            if (user != null) UserDTO(
+                token = user[Users.id].value,
+                email = user[email],
+                password = user[password],
+            ) else null
+        }
+    }
+
+    fun getByEmail(email: String): UserDTO? {
         return transaction {
             val user = Users.select { Users.email.eq(email) }.firstOrNull()
             if (user != null) UserDTO(
-                id = user[Users.id].value,
+                token = user[Users.id].value,
                 email = user[Users.email],
                 password = user[password],
             ) else null

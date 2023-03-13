@@ -1,6 +1,9 @@
 package dev.voitenko
 
-import dev.voitenko.database.*
+import dev.voitenko.database.Exercises
+import dev.voitenko.database.Iterations
+import dev.voitenko.database.Trainings
+import dev.voitenko.database.Users
 import dev.voitenko.plugins.configureSerialization
 import dev.voitenko.services.authentification.authRouting
 import dev.voitenko.services.trainings.trainingsRouting
@@ -21,7 +24,7 @@ fun main() {
 
     transaction {
         SchemaUtils
-            .create(Users, TokenTable, Trainings, Exercises, Iterations)
+            .create(Users, Trainings, Exercises, Iterations)
     }
 
     embeddedServer(
