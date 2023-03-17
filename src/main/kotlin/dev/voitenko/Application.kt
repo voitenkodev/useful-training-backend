@@ -10,6 +10,7 @@ import dev.voitenko.services.trainings.trainingsRouting
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import io.ktor.server.netty.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -27,12 +28,22 @@ fun main() {
             .create(Users, Trainings, Exercises, Iterations)
     }
 
+    // or SERVER_PORT
+    val port = System.getenv("SERVER_PORT")?.toInt() ?: 23567
+
     embeddedServer(
-        factory = CIO,
-        port = 8080,
-        host = "0.0.0.0",
-        module = Application::module
+        Netty,
+        port = port,
+        module =  Application::module
     ).start(wait = true)
+
+// LOCAL
+//    embeddedServer(
+//        factory = Netty,
+//        port = 8080,
+//        host = "0.0.0.0",
+//        module = Application::module
+//    ).start(wait = true)
 }
 
 fun Application.module() {

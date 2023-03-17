@@ -62,7 +62,7 @@ fun Trainings.insert(
 
     val trainingId = training.id?.let { UUID.fromString(it) } ?: UUID.randomUUID()
 
-    insertAndGetId {
+    val resultId = insertAndGetId {
         it[user_id] = userId
         it[id] = trainingId
         it[duration] = training.duration
@@ -94,6 +94,8 @@ fun Trainings.insert(
             this[Iterations.repeat] = iter.repeat
         }
     }
+
+    return@transaction resultId
 }
 
 fun Trainings.get(

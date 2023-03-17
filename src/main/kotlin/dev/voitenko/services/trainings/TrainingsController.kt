@@ -63,8 +63,8 @@ class TrainingsController(private val call: ApplicationCall) {
 
         val body = call.receive<Training>()
 
-        Trainings.insert(user.token, body)
+        val trainingId = Trainings.insert(user.token, body).value.toString()
 
-        call.respond(HttpStatusCode.OK)
+        call.respond(HttpStatusCode.OK, trainingId)
     }
 }
