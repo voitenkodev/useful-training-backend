@@ -22,7 +22,7 @@ class TrainingsController(private val call: ApplicationCall) {
             return
         }
 
-        val id = UUID.fromString(call.request.queryParameters["id"])
+        val id = UUID.fromString(call.parameters["id"])
 
         val training = Trainings.get {
             select { Trainings.id eq id }
@@ -76,7 +76,7 @@ class TrainingsController(private val call: ApplicationCall) {
             return
         }
 
-       val id = UUID.fromString(call.parameters["id"])
+       val id = UUID.fromString(call.request.queryParameters["id"])
 
         Trainings.remove(trainingId = id)
 
