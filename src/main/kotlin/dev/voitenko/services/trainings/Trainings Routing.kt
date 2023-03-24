@@ -22,4 +22,10 @@ fun Application.trainingsRouting() {
             trainingsController.setTraining()
         }
     }
+   routing {
+        delete("/training") {
+            val trainingsController = TrainingsController(call)
+            trainingsController.removeTraining()
+        }
+    }
 }

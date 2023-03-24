@@ -22,7 +22,7 @@ class TrainingsController(private val call: ApplicationCall) {
             return
         }
 
-        val id = UUID.fromString(call.parameters["id"])
+        val id = UUID.fromString(call.request.queryParameters["id"])
 
         val training = Trainings.get {
             select { Trainings.id eq id }
@@ -66,5 +66,20 @@ class TrainingsController(private val call: ApplicationCall) {
         val trainingId = Trainings.insert(user.token, body).value.toString()
 
         call.respond(HttpStatusCode.OK, trainingId)
+    }
+   suspend fun removeTraining() {
+        val token = call.request.headers["Authorization"]?.replace("Bearer ", "")
+        val user = Users.getByToken(token = UUID.fromString(token))
+
+        if (user == null) {
+            call.respond(HttpStatusCode.Unauthorized, "User Not Found")
+            return
+        }
+
+       val id = UUID.fromString(call.parameters["id"])
+
+        Trainings.remove(trainingId = id)
+
+        call.respond(HttpStatusCode.OK)
     }
 }

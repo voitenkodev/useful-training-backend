@@ -33,7 +33,7 @@ data class IterationsDto(
 )
 
 object Trainings : UUIDTable(name = "trainings") {
-    val user_id = uuid("user_id").references(Users.id)
+    val user_id = uuid("user_id").references(Users.id, onDelete = ReferenceOption.CASCADE)
     val duration = varchar("duration", 50)
     val date = varchar("date", 50)
     val tonnage = double("tonnage")
@@ -42,7 +42,7 @@ object Trainings : UUIDTable(name = "trainings") {
 }
 
 object Exercises : UUIDTable(name = "exercises") {
-    val training_id = uuid("training_id").references(Trainings.id)
+    val training_id = uuid("training_id").references(Trainings.id, onDelete = ReferenceOption.CASCADE)
     val name = varchar("name", 50)
     val tonnage = double("tonnage")
     val intensity = double("intensity")
@@ -50,7 +50,7 @@ object Exercises : UUIDTable(name = "exercises") {
 }
 
 object Iterations : UUIDTable(name = "iterations") {
-    val exercise_id = uuid("exercise_id").references(Exercises.id)
+    val exercise_id = uuid("exercise_id").references(Exercises.id, onDelete = ReferenceOption.CASCADE)
     val weight = double("weight")
     val repeat = integer("repeat")
 }
@@ -98,6 +98,15 @@ fun Trainings.insert(
     return@transaction resultId
 }
 
+fun Trainings.remove(
+    trainingId: UUID
+) = transaction {
+
+    this@remove.deleteWhere {
+        Trainings.id eq trainingId
+    }
+}
+
 fun Trainings.get(
     select: Join.() -> Query
 ): List<Training> = transaction {
@@ -105,6 +114,7 @@ fun Trainings.get(
         .leftJoin(Exercises)
         .leftJoin(Iterations)
         .select()
+        .orderBy(Trainings.id, SortOrder.ASC)
         .groupBy(
             { p -> p.toTraining() }, { p -> p }
         ).map {
