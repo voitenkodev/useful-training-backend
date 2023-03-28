@@ -6,6 +6,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import java.util.*
@@ -95,7 +96,7 @@ class TrainingsController(private val call: ApplicationCall) {
         val name = call.request.queryParameters["name"] ?: ""
 
         val response = Trainings.getExercises {
-            select { (Trainings.user_id eq user.token) and (Exercises.name like name) }
+            select { (Trainings.user_id eq user.token) and (Exercises.name like "$name%") }
         }
 
         call.respond(HttpStatusCode.OK, response)
