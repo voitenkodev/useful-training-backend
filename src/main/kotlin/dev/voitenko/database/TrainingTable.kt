@@ -1,5 +1,8 @@
 package dev.voitenko.database
 
+import dev.voitenko.services.trainings.dto.Exercise
+import dev.voitenko.services.trainings.dto.ExerciseDate
+import dev.voitenko.services.trainings.dto.Iteration
 import dev.voitenko.services.trainings.dto.Training
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
@@ -101,16 +104,15 @@ fun Trainings.insert(
 fun Trainings.remove(
     trainingId: UUID
 ) = transaction {
-
     this@remove.deleteWhere {
         Trainings.id eq trainingId
     }
 }
 
-fun Trainings.get(
+fun Trainings.getTrainings(
     select: Join.() -> Query
 ): List<Training> = transaction {
-    this@get
+    this@getTrainings
         .leftJoin(Exercises)
         .leftJoin(Iterations)
         .select()
@@ -122,15 +124,15 @@ fun Trainings.get(
             val exercises = it.value.groupBy({ p -> p.toExercise() }, { p -> p.toIteration() })
             training to exercises
         }.map {
-            val exercises: List<Training.Exercise> = it.second.map { ex ->
-                Training.Exercise(
+            val exercises: List<Exercise> = it.second.map { ex ->
+                Exercise(
                     id = ex.key.id.toString(),
                     name = ex.key.name,
                     tonnage = ex.key.tonnage,
                     countOfLifting = ex.key.count_of_lifting,
                     intensity = ex.key.intensity,
                     iterations = ex.value.map { iteration ->
-                        Training.Exercise.Iteration(
+                        Iteration(
                             id = iteration.id.toString(),
                             weight = iteration.weight,
                             repeat = iteration.repeat
@@ -146,6 +148,48 @@ fun Trainings.get(
                 countOfLifting = it.first.count_of_lifting,
                 intensity = it.first.intensity,
                 exercises = exercises
+            )
+        }
+}
+
+
+fun Trainings.getExercises(
+    select: Join.() -> Query
+): List<ExerciseDate> = transaction {
+    this@getExercises
+        .leftJoin(Exercises)
+        .leftJoin(Iterations)
+        .select()
+        .orderBy(Trainings.id, SortOrder.ASC)
+        .map {
+            val training = it.toTraining()
+            val exercise = it.toExercise()
+            val iteration = it.toIteration()
+            (training to exercise) to iteration
+        }.groupBy(
+            { it.first }, { it.second }
+        ).map {
+            val iterations = it.value.map { iteration ->
+                Iteration(
+                    id = iteration.id.toString(),
+                    weight = iteration.weight,
+                    repeat = iteration.repeat
+                )
+            }
+
+            val exercise = Exercise(
+                id = it.key.second.id.toString(),
+                name = it.key.second.name,
+                tonnage = it.key.second.tonnage,
+                countOfLifting = it.key.second.count_of_lifting,
+                intensity = it.key.second.intensity,
+                iterations = iterations
+            )
+
+            ExerciseDate(
+                trainingId = it.key.first.id.toString(),
+                date = it.key.first.date,
+                exercise = exercise
             )
         }
 }

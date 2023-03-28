@@ -12,9 +12,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import java.util.*
 
-class AuthController(
-    private val call: ApplicationCall
-) {
+class AuthController(private val call: ApplicationCall) {
 
     suspend fun registerUser() {
         val body = call.receive<RegisterBody>()
