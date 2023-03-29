@@ -4,13 +4,13 @@ import dev.voitenko.services.trainings.dto.Exercise
 import dev.voitenko.services.trainings.dto.ExerciseDate
 import dev.voitenko.services.trainings.dto.Iteration
 import dev.voitenko.services.trainings.dto.Training
-import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 data class TrainingsDto(
-    val id: UUID,
+    val id: Int,
     val user_id: UUID,
     val duration: String,
     val date: String,
@@ -20,8 +20,8 @@ data class TrainingsDto(
 )
 
 data class ExercisesDto(
-    val id: UUID,
-    val training_id: UUID,
+    val id: Int,
+    val training_id: Int,
     val name: String,
     val tonnage: Double,
     val count_of_lifting: Int,
@@ -29,13 +29,13 @@ data class ExercisesDto(
 )
 
 data class IterationsDto(
-    val id: UUID,
-    val exercise_id: UUID,
+    val id: Int,
+    val exercise_id: Int,
     val weight: Double,
     val repeat: Int,
 )
 
-object Trainings : UUIDTable(name = "trainings") {
+object Trainings : IntIdTable(name = "trainings") {
     val user_id = uuid("user_id").references(Users.id, onDelete = ReferenceOption.CASCADE)
     val duration = varchar("duration", 50)
     val date = varchar("date", 50)
@@ -44,16 +44,16 @@ object Trainings : UUIDTable(name = "trainings") {
     val count_of_lifting = integer("count_of_lifting")
 }
 
-object Exercises : UUIDTable(name = "exercises") {
-    val training_id = uuid("training_id").references(Trainings.id, onDelete = ReferenceOption.CASCADE)
+object Exercises : IntIdTable(name = "exercises") {
+    val training_id = integer("training_id").references(Trainings.id, onDelete = ReferenceOption.CASCADE)
     val name = varchar("name", 50)
     val tonnage = double("tonnage")
     val intensity = double("intensity")
     val count_of_lifting = integer("count_of_lifting")
 }
 
-object Iterations : UUIDTable(name = "iterations") {
-    val exercise_id = uuid("exercise_id").references(Exercises.id, onDelete = ReferenceOption.CASCADE)
+object Iterations : IntIdTable(name = "iterations") {
+    val exercise_id = integer("exercise_id").references(Exercises.id, onDelete = ReferenceOption.CASCADE)
     val weight = double("weight")
     val repeat = integer("repeat")
 }
@@ -63,11 +63,8 @@ fun Trainings.insert(
     training: Training
 ) = transaction {
 
-    val trainingId = training.id?.let { UUID.fromString(it) } ?: UUID.randomUUID()
-
     val resultId = insertAndGetId {
         it[user_id] = userId
-        it[id] = trainingId
         it[duration] = training.duration
         it[date] = training.date
         it[tonnage] = training.tonnage
@@ -75,24 +72,20 @@ fun Trainings.insert(
         it[count_of_lifting] = training.countOfLifting
     }
 
-    val exercises = training.exercises.map { it.copy(id = it.id ?: UUID.randomUUID().toString()) }
+    val exercises = training.exercises
 
     Exercises.batchInsert(exercises) { ex ->
-        this[Exercises.id] = UUID.fromString(ex.id)
-        this[Exercises.training_id] = trainingId
+        this[Exercises.training_id] = resultId.value
         this[Exercises.name] = ex.name
         this[Exercises.tonnage] = ex.tonnage
         this[Exercises.intensity] = ex.intensity
         this[Exercises.count_of_lifting] = ex.countOfLifting
-    }
-
-    exercises.forEach { ex ->
-
-        val iterations = ex.iterations.map { it.copy(id = it.id ?: UUID.randomUUID().toString()) }
-
+    }.map {
+        it[Exercises.id].value
+    }.onEachIndexed { index, exerciseId ->
+        val iterations = exercises.getOrNull(index)?.iterations ?: emptyList()
         Iterations.batchInsert(iterations) { iter ->
-            this[Iterations.id] = UUID.fromString(iter.id)
-            this[Iterations.exercise_id] = UUID.fromString(ex.id)
+            this[Iterations.exercise_id] = exerciseId
             this[Iterations.weight] = iter.weight
             this[Iterations.repeat] = iter.repeat
         }
@@ -102,7 +95,7 @@ fun Trainings.insert(
 }
 
 fun Trainings.remove(
-    trainingId: UUID
+    trainingId: Int
 ) = transaction {
     this@remove.deleteWhere {
         Trainings.id eq trainingId
@@ -116,7 +109,7 @@ fun Trainings.getTrainings(
         .leftJoin(Exercises)
         .leftJoin(Iterations)
         .select()
-        .orderBy(Trainings.id, SortOrder.ASC)
+        .orderBy(Trainings.id, SortOrder.DESC)
         .groupBy(
             { p -> p.toTraining() }, { p -> p }
         ).map {

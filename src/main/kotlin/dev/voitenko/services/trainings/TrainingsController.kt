@@ -22,7 +22,7 @@ class TrainingsController(private val call: ApplicationCall) {
             return
         }
 
-        val id = UUID.fromString(call.parameters["id"])
+        val id = call.parameters["id"]?.toIntOrNull()
 
         val training = Trainings.getTrainings {
             select { Trainings.id eq id }
@@ -77,9 +77,15 @@ class TrainingsController(private val call: ApplicationCall) {
             return
         }
 
-        val id = UUID.fromString(call.request.queryParameters["id"])
+        val id = call.request.queryParameters["id"]?.toIntOrNull()
+
+        if (id == null) {
+            call.respond(HttpStatusCode.BadRequest, "Invalid ID")
+            return
+        }
 
         Trainings.remove(trainingId = id)
+
 
         call.respond(HttpStatusCode.OK)
     }
