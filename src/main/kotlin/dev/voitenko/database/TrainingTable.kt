@@ -4,13 +4,13 @@ import dev.voitenko.services.trainings.dto.Exercise
 import dev.voitenko.services.trainings.dto.ExerciseDate
 import dev.voitenko.services.trainings.dto.Iteration
 import dev.voitenko.services.trainings.dto.Training
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 data class TrainingsDto(
-    val id: Int,
+    val id: Long,
     val user_id: UUID,
     val duration: String,
     val date: String,
@@ -20,8 +20,8 @@ data class TrainingsDto(
 )
 
 data class ExercisesDto(
-    val id: Int,
-    val training_id: Int,
+    val id: Long,
+    val training_id: Long,
     val name: String,
     val tonnage: Double,
     val count_of_lifting: Int,
@@ -29,13 +29,13 @@ data class ExercisesDto(
 )
 
 data class IterationsDto(
-    val id: Int,
-    val exercise_id: Int,
+    val id: Long,
+    val exercise_id: Long,
     val weight: Double,
     val repeat: Int,
 )
 
-object Trainings : IntIdTable(name = "trainings") {
+object Trainings : LongIdTable(name = "trainings") {
     val user_id = uuid("user_id").references(Users.id, onDelete = ReferenceOption.CASCADE)
     val duration = varchar("duration", 50)
     val date = varchar("date", 50)
@@ -44,16 +44,16 @@ object Trainings : IntIdTable(name = "trainings") {
     val count_of_lifting = integer("count_of_lifting")
 }
 
-object Exercises : IntIdTable(name = "exercises") {
-    val training_id = integer("training_id").references(Trainings.id, onDelete = ReferenceOption.CASCADE)
+object Exercises : LongIdTable(name = "exercises") {
+    val training_id = long("training_id").references(Trainings.id, onDelete = ReferenceOption.CASCADE)
     val name = varchar("name", 50)
     val tonnage = double("tonnage")
     val intensity = double("intensity")
     val count_of_lifting = integer("count_of_lifting")
 }
 
-object Iterations : IntIdTable(name = "iterations") {
-    val exercise_id = integer("exercise_id").references(Exercises.id, onDelete = ReferenceOption.CASCADE)
+object Iterations : LongIdTable(name = "iterations") {
+    val exercise_id = long("exercise_id").references(Exercises.id, onDelete = ReferenceOption.CASCADE)
     val weight = double("weight")
     val repeat = integer("repeat")
 }
@@ -95,7 +95,7 @@ fun Trainings.insert(
 }
 
 fun Trainings.remove(
-    trainingId: Int
+    trainingId: Long
 ) = transaction {
     this@remove.deleteWhere {
         Trainings.id eq trainingId
@@ -119,22 +119,22 @@ fun Trainings.getTrainings(
         }.map {
             val exercises: List<Exercise> = it.second.map { ex ->
                 Exercise(
-                    id = ex.key.id.toString(),
+                    id = ex.key.id,
                     name = ex.key.name,
                     tonnage = ex.key.tonnage,
                     countOfLifting = ex.key.count_of_lifting,
                     intensity = ex.key.intensity,
                     iterations = ex.value.map { iteration ->
                         Iteration(
-                            id = iteration.id.toString(),
+                            id = iteration.id,
                             weight = iteration.weight,
                             repeat = iteration.repeat
                         )
-                    }
+                    }.sortedBy { it.id }
                 )
-            }
+            }.sortedBy { it.id }
             Training(
-                id = it.first.id.toString(),
+                id = it.first.id,
                 duration = it.first.duration,
                 date = it.first.date,
                 tonnage = it.first.tonnage,
@@ -164,14 +164,14 @@ fun Trainings.getExercises(
         ).map {
             val iterations = it.value.map { iteration ->
                 Iteration(
-                    id = iteration.id.toString(),
+                    id = iteration.id,
                     weight = iteration.weight,
                     repeat = iteration.repeat
                 )
-            }
+            }.sortedBy { it.id }
 
             val exercise = Exercise(
-                id = it.key.second.id.toString(),
+                id = it.key.second.id,
                 name = it.key.second.name,
                 tonnage = it.key.second.tonnage,
                 countOfLifting = it.key.second.count_of_lifting,
@@ -180,11 +180,11 @@ fun Trainings.getExercises(
             )
 
             ExerciseDate(
-                trainingId = it.key.first.id.toString(),
+                trainingId = it.key.first.id,
                 date = it.key.first.date,
                 exercise = exercise
             )
-        }
+        }.sortedBy { it.exercise?.id }
 }
 
 private fun ResultRow.toTraining(): TrainingsDto = TrainingsDto(
